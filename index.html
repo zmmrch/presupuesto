@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Alta de Presupuesto</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; margin: 0; }
+    .container { max-width: 1200px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h1, h2, h3 { text-align: center; color: #333; }
+    .form-section { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 4px; background: #fafafa; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    input[readonly] { background: #eee; }
+    .btn { background: #69b6b1; color: #fff; border: none; padding: 10px 20px; margin-top: 15px; border-radius: 4px; cursor: pointer; }
+    .btn:hover { background: #a7d3cf; }
+    .remove-btn { background: #d9534f; padding: 5px 10px; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; }
+    .remove-btn:hover { background: #c9302c; }
+    .sector-block, .medida-block, .sector-prod-block { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 4px; background: #fff; }
+    #resumenTable { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    #resumenTable, #resumenTable th, #resumenTable td { border: 1px solid #aaa; }
+    #resumenTable th, #resumenTable td { padding: 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Alta de Presupuesto</h1>
+    <form id="presupuestoForm" method="POST" action="/presupuestos/alta/">
+      
+      <!-- SECCIÓN 1: Datos del Prospecto -->
+      <div class="form-section">
+        <h2>Datos del Prospecto</h2>
+        <label for="prospectoSelect">Prospecto:</label>
+        <select id="prospectoSelect" name="id_prospecto" required>
+          <option value="1">Prospecto A</option>
+          <option value="2">Prospecto B</option>
+          <option value="3">Prospecto C</option>
+        </select>
+      </div>
+      
+      <!-- SECCIÓN 2: Datos Generales -->
+      <div class="form-section">
+        <h2>Datos Generales</h2>
+        <label for="numeroPresupuesto">Número de Presupuesto:</label>
+        <input type="text" id="numeroPresupuesto" name="numero_presupuesto" readonly placeholder="Autogenerado">
+
+        <label for="fechaPresupuesto">Fecha de Presupuesto:</label>
+        <input type="date" id="fechaPresupuesto" name="fecha_presupuesto" readonly>
+
+        <label for="vendedor">Vendedor:</label>
+        <input type="text" id="vendedor" name="vendedor" readonly value="JC (Autocompletado)">
+        
+        <label for="empresa">Empresa:</label>
+        <input type="text" id="empresa" name="empresa" readonly value="Empresa X">
+               
+        <label for="fechaEnvio">Fecha de Envío:</label>
+        <input type="date" id="fechaEnvio" name="fecha_envio">
+        
+        <label for="estadoPresupuesto">Estado:</label>
+        <select id="estadoPresupuesto" name="estado" required>
+          <option value="En curso">En curso</option>
+          <option value="Enviado">Enviado</option>
+          <option value="Cancelado">Cancelado</option>
+          <option value="Finalizado">Finalizado</option>
+          <option value="Modificado">Modificado</option>
+        </select>
+      </div>
+      
+      <!-- SECCIÓN 3: Costos Adicionales -->
+      <div class="form-section">
+        <h2>Costos Adicionales</h2>
+        <label for="ayudantesSelect">Ayudantes (Cantidad):</label>
+        <select id="ayudantesSelect" name="id_ayudantes">
+          <option value="">-- Seleccione --</option>
+          <option value="1">1 Ayudante</option>
+          <option value="2">2 Ayudantes</option>
+        </select>
+        
+        <label for="escalerasSelect">Cantidad de Escaleras:</label>
+        <select id="escalerasSelect" name="id_cantidad_escaleras">
+          <option value="">-- Seleccione --</option>
+          <option value="1">1 Escalera</option>
+          <option value="2">2 Escaleras</option>
+        </select>
+        
+        <label for="metrosDespolarizar">Metros a Despolarizar:</label>
+        <input type="number" id="metrosDespolarizar" name="metros_despolarizar" step="0.01">
+        
+        <label for="diasDistancia">Días para +200 km:</label>
+        <input type="number" id="diasDistancia" name="dias_distancia" step="1">
+      </div>
+      
+      <!-- SECCIÓN 4: Sectores -->
+      <div class="form-section">
+        <h2>Sectores</h2>
+        <div id="sectoresContainer">
+          <!-- Bloques de sector se agregarán dinámicamente -->
+        </div>
+        <button type="button" class="btn" id="addSectorBtn">Agregar Sector</button>
+      </div>
+      
+      <!-- SECCIÓN 5: Resumen y Totales -->
+      <div class="form-section">
+        <h2>Resumen y Totales</h2>
+        <label for="m2Totales">Área Total (m²):</label>
+        <input type="number" id="m2Totales" name="m2_totales" readonly>
+        
+        <label for="metrosLineales">Metros Lineales:</label>
+        <input type="number" id="metrosLineales" name="metros_lineales" readonly>
+        
+        <button type="button" class="btn" id="calcularBtn">Calcular</button>
+        
+        <!-- Tabla Resumen de Detalle de Cotización -->
+        <h3>Resumen de Detalle de Cotización</h3>
+        <table id="resumenTable">
+          <thead>
+            <tr>
+              <th>Sector</th>
+              <th>Descripción</th>
+              <th>Producto</th>
+              <th>Importe Final (ARS)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Se llenará dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- SECCIÓN 6: Información Adicional -->
+      <div class="form-section">
+        <h2>Información Adicional</h2>
+        <label for="informacionAdicional">Comentarios:</label>
+        <textarea id="informacionAdicional" name="informacion_adicional" rows="3"></textarea>
+      </div>
+      
+      <button type="submit" class="btn">Guardar Presupuesto</button>
+      
+      <input type="hidden" id="version" name="version" value="1">
+      <input type="hidden" id="original_presupuesto" name="original_presupuesto" value="">
+    </form>
+  </div>
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Auto-asignar fecha de presupuesto (hoy)
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById("fechaPresupuesto").value = today;
+      
+      const sectoresContainer = document.getElementById("sectoresContainer");
+      const addSectorBtn = document.getElementById("addSectorBtn");
+      let sectorCount = 0;
+      
+      function createSectorBlock() {
+        const sectorDiv = document.createElement("div");
+        sectorDiv.classList.add("sector-block");
+        
+        const header = document.createElement("h3");
+        header.textContent = "Sector " + (sectorCount + 1);
+        sectorDiv.appendChild(header);
+        
+        const removeSectorBtn = document.createElement("button");
+        removeSectorBtn.type = "button";
+        removeSectorBtn.textContent = "Eliminar Sector";
+        removeSectorBtn.classList.add("remove-btn");
+        removeSectorBtn.addEventListener("click", function() {
+          sectorDiv.remove();
+          updateResumenTable();
+          calculateTotals();
+        });
+        sectorDiv.appendChild(removeSectorBtn);
+        
+        const labelDesc = document.createElement("label");
+        labelDesc.textContent = "Descripción del Sector:";
+        sectorDiv.appendChild(labelDesc);
+        const inputDesc = document.createElement("input");
+        inputDesc.type = "text";
+        inputDesc.name = `sector_${sectorCount}_descripcion`;
+        inputDesc.required = true;
+        sectorDiv.appendChild(inputDesc);
+        
+        const labelVidrio = document.createElement("label");
+        labelVidrio.textContent = "Tipo de Vidrio:";
+        sectorDiv.appendChild(labelVidrio);
+        const selectVidrio = document.createElement("select");
+        selectVidrio.name = `sector_${sectorCount}_tipo_vidrio`;
+        const tiposVidrioSim = [
+          { id: 1, descripcion: "Crudo" },
+          { id: 2, descripcion: "Templado" },
+          { id: 3, descripcion: "Laminado" }
+        ];
+        tiposVidrioSim.forEach(tv => {
+          const option = document.createElement("option");
+          option.value = tv.id;
+          option.textContent = tv.descripcion;
+          selectVidrio.appendChild(option);
+        });
+        sectorDiv.appendChild(selectVidrio);
+        
+        const labelInstalacion = document.createElement("label");
+        labelInstalacion.textContent = "Instalación (Interior/Exterior):";
+        sectorDiv.appendChild(labelInstalacion);
+        const selectInstalacion = document.createElement("select");
+        selectInstalacion.name = `sector_${sectorCount}_precio_instalacion`;
+        const instalacionesSim = [
+          { id: 1, descripcion: "Interior" },
+          { id: 2, descripcion: "Exterior" }
+        ];
+        instalacionesSim.forEach(i => {
+          const option = document.createElement("option");
+          option.value = i.id;
+          option.textContent = i.descripcion;
+          selectInstalacion.appendChild(option);
+        });
+        sectorDiv.appendChild(selectInstalacion);
+        
+        const labelAndamios = document.createElement("label");
+        labelAndamios.textContent = "Andamios:";
+        sectorDiv.appendChild(labelAndamios);
+        const selectAndamios = document.createElement("select");
+        selectAndamios.name = `sector_${sectorCount}_precio_andamios`;
+        const andamiosSim = [
+          { id: 1, descripcion: "1 andamio" },
+          { id: 2, descripcion: "2 andamios" }
+        ];
+        andamiosSim.forEach(a => {
+          const option = document.createElement("option");
+          option.value = a.id;
+          option.textContent = a.descripcion;
+          selectAndamios.appendChild(option);
+        });
+        sectorDiv.appendChild(selectAndamios);
+        
+        const labelVidrioRep = document.createElement("label");
+        labelVidrioRep.textContent = "Metros de Vidrio Repartido:";
+        sectorDiv.appendChild(labelVidrioRep);
+        const inputVidrioRep = document.createElement("input");
+        inputVidrioRep.type = "number";
+        inputVidrioRep.step = "0.01";
+        inputVidrioRep.name = `sector_${sectorCount}_metros_vidrio_repartido`;
+        inputVidrioRep.required = true;
+        sectorDiv.appendChild(inputVidrioRep);
+        
+        const medidasContainer = document.createElement("div");
+        medidasContainer.classList.add("medidas-container");
+        sectorDiv.appendChild(medidasContainer);
+        const addMedidaBtn = document.createElement("button");
+        addMedidaBtn.type = "button";
+        addMedidaBtn.textContent = "Agregar Medida";
+        addMedidaBtn.classList.add("btn");
+        addMedidaBtn.addEventListener("click", function() {
+          medidasContainer.appendChild(createMedidaRow(sectorCount));
+        });
+        sectorDiv.appendChild(addMedidaBtn);
+        
+        const productosContainer = document.createElement("div");
+        productosContainer.classList.add("productos-container");
+        sectorDiv.appendChild(productosContainer);
+        const addProductoBtn = document.createElement("button");
+        addProductoBtn.type = "button";
+        addProductoBtn.textContent = "Agregar Producto al Sector";
+        addProductoBtn.classList.add("btn");
+        addProductoBtn.addEventListener("click", function() {
+          productosContainer.appendChild(createSectorProductoRow(sectorCount));
+        });
+        sectorDiv.appendChild(addProductoBtn);
+        
+        updateResumenTable();
+        sectorCount++;
+        return sectorDiv;
+      }
+      
+      function createMedidaRow(sectorIndex) {
+        const div = document.createElement("div");
+        div.classList.add("medida-block");
+        
+        const labelCant = document.createElement("label");
+        labelCant.textContent = "Cantidad:";
+        div.appendChild(labelCant);
+        const inputCant = document.createElement("input");
+        inputCant.type = "number";
+        inputCant.name = `sector_${sectorIndex}_medida_cantidad[]`;
+        inputCant.required = true;
+        div.appendChild(inputCant);
+        
+        const labelAncho = document.createElement("label");
+        labelAncho.textContent = "Ancho (m):";
+        div.appendChild(labelAncho);
+        const inputAncho = document.createElement("input");
+        inputAncho.type = "number";
+        inputAncho.step = "0.01";
+        inputAncho.name = `sector_${sectorIndex}_medida_ancho[]`;
+        inputAncho.required = true;
+        div.appendChild(inputAncho);
+        
+        const labelAlto = document.createElement("label");
+        labelAlto.textContent = "Alto (m):";
+        div.appendChild(labelAlto);
+        const inputAlto = document.createElement("input");
+        inputAlto.type = "number";
+        inputAlto.step = "0.01";
+        inputAlto.name = `sector_${sectorIndex}_medida_alto[]`;
+        inputAlto.required = true;
+        div.appendChild(inputAlto);
+        
+        const removeMedidaBtn = document.createElement("button");
+        removeMedidaBtn.type = "button";
+        removeMedidaBtn.textContent = "Eliminar Medida";
+        removeMedidaBtn.classList.add("remove-btn");
+        removeMedidaBtn.addEventListener("click", function() {
+          div.remove();
+          calculateTotals();
+          updateResumenTable();
+        });
+        div.appendChild(removeMedidaBtn);
+        return div;
+      }
+      
+      function createSectorProductoRow(sectorIndex) {
+        const div = document.createElement("div");
+        div.classList.add("sector-prod-block");
+        
+        const labelProd = document.createElement("label");
+        labelProd.textContent = "Producto:";
+        div.appendChild(labelProd);
+        const selectProd = document.createElement("select");
+        selectProd.name = `sector_${sectorIndex}_producto[]`;
+        const productosSim = [
+          { id: 1, tipo_lamina: "Privacidad" },
+          { id: 2, tipo_lamina: "Transparente" }
+        ];
+        productosSim.forEach(prod => {
+          const option = document.createElement("option");
+          option.value = prod.id;
+          option.textContent = prod.tipo_lamina;
+          selectProd.appendChild(option);
+        });
+        div.appendChild(selectProd);
+        
+        // Se elimina el campo "Precio Base" ya que se calcula internamente.
+        
+        const removeProdBtn = document.createElement("button");
+        removeProdBtn.type = "button";
+        removeProdBtn.textContent = "Eliminar Producto";
+        removeProdBtn.classList.add("remove-btn");
+        removeProdBtn.addEventListener("click", function() {
+          div.remove();
+          calculateTotals();
+          updateResumenTable();
+        });
+        div.appendChild(removeProdBtn);
+        return div;
+      }
+      
+      function calculateTotals() {
+        document.getElementById("m2Totales").value = 150;
+        document.getElementById("metrosLineales").value = 80;
+      }
+      
+      function updateResumenTable() {
+      const resumenTbody = document.querySelector("#resumenTable tbody");
+      resumenTbody.innerHTML = "";
+      const sectores = document.querySelectorAll(".sector-block");
+      sectores.forEach((sector, sIndex) => {
+        const desc = sector.querySelector(`input[name="sector_${sIndex}_descripcion"]`).value || "";
+        // Obtener todos los bloques de producto en este sector
+        const prodBlocks = sector.querySelectorAll(".sector-prod-block");
+        prodBlocks.forEach(prodBlock => {
+          const selectProd = prodBlock.querySelector("select");
+          let prodName = selectProd ? selectProd.options[selectProd.selectedIndex].textContent : "";
+          // Suponemos un importe final simulado para el producto (en producción se calculará con la lógica de costos)
+          const importeFinal = 5000; // Valor simulado
+          const row = document.createElement("tr");
+          const cellSector = document.createElement("td");
+          cellSector.textContent = sIndex + 1;
+          row.appendChild(cellSector);
+          
+          const cellDesc = document.createElement("td");
+          cellDesc.textContent = desc;
+          row.appendChild(cellDesc);
+          
+          const cellProd = document.createElement("td");
+          cellProd.textContent = prodName;
+          row.appendChild(cellProd);
+          
+          const cellImporte = document.createElement("td");
+          cellImporte.textContent = importeFinal.toFixed(2);
+          row.appendChild(cellImporte);
+          
+          resumenTbody.appendChild(row);
+        });
+      });
+    }
+
+      
+      addSectorBtn.addEventListener("click", function() {
+        sectoresContainer.appendChild(createSectorBlock());
+      });
+      
+      document.getElementById("calcularBtn").addEventListener("click", function() {
+        calculateTotals();
+        updateResumenTable();
+      });
+      
+      document.getElementById("presupuestoForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        alert("Presupuesto guardado (simulación)!");
+      });
+    });
+  </script>
+</body>
+</html>
