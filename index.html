@@ -77,11 +77,17 @@
       border-radius: 4px;
       background: #fff;
     }
-    /* Tabla resumen */
+    /* Contenedor para la tabla responsiva */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+    /* Estilos de la tabla */
     #resumenTable {
       width: 100%;
       border-collapse: collapse;
       margin-top: 15px;
+      min-width: 600px; /* Si la tabla es muy ancha, se mostrará scroll horizontal */
     }
     #resumenTable, #resumenTable th, #resumenTable td {
       border: 1px solid #aaa;
@@ -90,6 +96,15 @@
       padding: 8px;
       text-align: left;
       vertical-align: top;
+    }
+    /* Ajustes para pantallas móviles */
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+      h1, h2, h3 {
+        font-size: 1.2em;
+      }
     }
   </style>
 </head>
@@ -135,7 +150,6 @@
           <option value="Finalizado">Finalizado</option>
           <option value="Modificado">Modificado</option>
         </select>
-        
       </div>
       
       <!-- SECCIÓN 3: Costos Adicionales -->
@@ -166,7 +180,7 @@
       <div class="form-section">
         <h2>Sectores</h2>
         <div id="sectoresContainer">
-          <!-- Bloques de sector se agregarán dinámicamente -->
+          <!-- Se agregarán dinámicamente bloques de sector -->
         </div>
         <button type="button" class="btn" id="addSectorBtn">Agregar Sector</button>
       </div>
@@ -182,22 +196,25 @@
         
         <button type="button" class="btn" id="calcularBtn">Calcular</button>
         
-        <!-- Tabla Resumen de Detalle de Cotización -->
-        <h3>Resumen de Detalle de Cotización</h3>
-        <table id="resumenTable">
-          <thead>
-            <tr>
-              <th>Sector</th>
-              <th>Descripción</th>
-              <th>Producto</th>
-              <th>Medidas (Cant x Ancho x Alto)</th>
-              <th>Importe Final (ARS)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Se llenará dinámicamente -->
-          </tbody>
-        </table>
+        <!-- Contenedor para la tabla responsiva -->
+        <div class="table-responsive">
+          <!-- Tabla Resumen de Detalle de Cotización -->
+          <h3>Resumen de Detalle de Cotización</h3>
+          <table id="resumenTable">
+            <thead>
+              <tr>
+                <th>Sector</th>
+                <th>Descripción</th>
+                <th>Producto</th>
+                <th>Medidas (Cant x Ancho x Alto)</th>
+                <th>Importe Final (ARS)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Se llenará dinámicamente -->
+            </tbody>
+          </table>
+        </div>
       </div>
       
       <!-- SECCIÓN 6: Información Adicional -->
@@ -216,7 +233,7 @@
   
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // Asignar fecha de hoy
+      // Asigna la fecha actual al campo fechaPresupuesto
       const today = new Date().toISOString().split('T')[0];
       document.getElementById("fechaPresupuesto").value = today;
       
@@ -224,19 +241,17 @@
       const addSectorBtn = document.getElementById("addSectorBtn");
       let sectorCount = 0;
       
-      // Crear bloque de sector
+      // Crear bloque de sector y almacenar su índice real en data-attribute
       function createSectorBlock() {
         const sectorDiv = document.createElement("div");
         sectorDiv.classList.add("sector-block");
-        
-        // Guardar el índice real de este sector en un data-attribute
         sectorDiv.dataset.sectorIndex = sectorCount;
         
         const header = document.createElement("h3");
         header.textContent = "Sector " + (sectorCount + 1);
         sectorDiv.appendChild(header);
         
-        // Botón eliminar sector
+        // Botón para eliminar sector
         const removeSectorBtn = document.createElement("button");
         removeSectorBtn.type = "button";
         removeSectorBtn.textContent = "Eliminar Sector";
@@ -254,7 +269,6 @@
         sectorDiv.appendChild(labelDesc);
         const inputDesc = document.createElement("input");
         inputDesc.type = "text";
-        // El name se basa en sectorCount
         inputDesc.name = `sector_${sectorCount}_descripcion`;
         inputDesc.required = true;
         sectorDiv.appendChild(inputDesc);
@@ -278,7 +292,7 @@
         });
         sectorDiv.appendChild(selectVidrio);
         
-        // Instalación
+        // Instalación (Interior/Exterior)
         const labelInstalacion = document.createElement("label");
         labelInstalacion.textContent = "Instalación (Interior/Exterior):";
         sectorDiv.appendChild(labelInstalacion);
@@ -314,7 +328,7 @@
         });
         sectorDiv.appendChild(selectAndamios);
         
-        // Vidrio Repartido
+        // Vidrio Repartido: Ingresar metros
         const labelVidrioRep = document.createElement("label");
         labelVidrioRep.textContent = "Metros de Vidrio Repartido:";
         sectorDiv.appendChild(labelVidrioRep);
@@ -351,13 +365,12 @@
         });
         sectorDiv.appendChild(addProductoBtn);
         
-        // Sincronizar y actualizar
         updateResumenTable();
         sectorCount++;
         return sectorDiv;
       }
       
-      // Crear un bloque de medida
+      // Crear un bloque de Medida
       function createMedidaRow(sectorIndex) {
         const div = document.createElement("div");
         div.classList.add("medida-block");
@@ -404,7 +417,7 @@
         return div;
       }
       
-      // Crear un bloque de producto
+      // Crear un bloque de Producto
       function createSectorProductoRow(sectorIndex) {
         const div = document.createElement("div");
         div.classList.add("sector-prod-block");
@@ -426,7 +439,7 @@
         });
         div.appendChild(selectProd);
         
-        // Eliminamos el campo "Precio Base" ya que se calcula internamente
+        // Eliminamos el campo "Precio Base" porque se calcula internamente
         
         const removeProdBtn = document.createElement("button");
         removeProdBtn.type = "button";
@@ -441,71 +454,65 @@
         return div;
       }
       
-      // Cálculo simulado de totales globales
+      // Función simulada para calcular totales globales
       function calculateTotals() {
-        document.getElementById("m2Totales").value = 150;
-        document.getElementById("metrosLineales").value = 80;
+        document.getElementById("m2Totales").value = 150; // Valor simulado
+        document.getElementById("metrosLineales").value = 80; // Valor simulado
       }
       
-      // Actualiza la tabla "Resumen de Detalle de Cotización"
+      // Actualizar la tabla de resumen de detalle de cotización
       function updateResumenTable() {
         const resumenTbody = document.querySelector("#resumenTable tbody");
         resumenTbody.innerHTML = "";
         
-        // Capturar todos los sectores
+        // Recorrer cada sector
         const sectores = document.querySelectorAll(".sector-block");
         sectores.forEach(sector => {
-          // Recuperar el índice real desde data-sector-index
-          const sectorIndex = parseInt(sector.dataset.sectorIndex, 10);
+          // Leer el índice real desde el data-attribute
+          const sectorIndex = sector.dataset.sectorIndex;
           
-          // Descripción del sector
+          // Obtener la descripción del sector
           const descInput = sector.querySelector(`input[name="sector_${sectorIndex}_descripcion"]`);
           const desc = descInput ? descInput.value : "";
           
-          // Construir texto de medidas
+          // Recoger todas las medidas de este sector y formatearlas con salto de línea
           let measureText = "";
           const measureBlocks = sector.querySelectorAll(".medida-block");
           measureBlocks.forEach(mb => {
             const cantidad = mb.querySelector(`input[name="sector_${sectorIndex}_medida_cantidad[]"]`)?.value || "";
             const ancho = mb.querySelector(`input[name="sector_${sectorIndex}_medida_ancho[]"]`)?.value || "";
             const alto = mb.querySelector(`input[name="sector_${sectorIndex}_medida_alto[]"]`)?.value || "";
-            // Cada medida en una línea distinta
             measureText += `${cantidad} x ${ancho} x ${alto}<br>`;
           });
           
-          // Productos del sector
+          // Recorrer cada producto del sector
           const prodBlocks = sector.querySelectorAll(".sector-prod-block");
           prodBlocks.forEach(prodBlock => {
             const selectProd = prodBlock.querySelector(`select[name="sector_${sectorIndex}_producto[]"]`);
             const prodName = selectProd ? selectProd.options[selectProd.selectedIndex].textContent : "";
             
-            // Simulación de importe final
+            // Importe final simulado
             const importeFinal = 5000;
             
-            // Crear fila
+            // Crear la fila para este producto
             const row = document.createElement("tr");
             
-            // Sector
             const cellSector = document.createElement("td");
-            cellSector.textContent = sectorIndex + 1;
+            cellSector.textContent = parseInt(sectorIndex, 10) + 1;
             row.appendChild(cellSector);
             
-            // Descripción
             const cellDesc = document.createElement("td");
             cellDesc.textContent = desc;
             row.appendChild(cellDesc);
             
-            // Producto
             const cellProd = document.createElement("td");
             cellProd.textContent = prodName;
             row.appendChild(cellProd);
             
-            // Medidas
             const cellMedidas = document.createElement("td");
             cellMedidas.innerHTML = measureText.trim();
             row.appendChild(cellMedidas);
             
-            // Importe final
             const cellImporte = document.createElement("td");
             cellImporte.textContent = importeFinal.toFixed(2);
             row.appendChild(cellImporte);
@@ -515,18 +522,18 @@
         });
       }
       
-      // Botón para agregar un sector
+      // Agregar un nuevo sector al hacer clic en "Agregar Sector"
       addSectorBtn.addEventListener("click", function() {
         sectoresContainer.appendChild(createSectorBlock());
       });
       
-      // Botón "Calcular"
+      // Al hacer clic en "Calcular", se actualizan los totales y el resumen
       document.getElementById("calcularBtn").addEventListener("click", function() {
         calculateTotals();
         updateResumenTable();
       });
       
-      // Envío del formulario
+      // Al enviar el formulario (simulación)
       document.getElementById("presupuestoForm").addEventListener("submit", function(e) {
         e.preventDefault();
         alert("Presupuesto guardado (simulación)!");
