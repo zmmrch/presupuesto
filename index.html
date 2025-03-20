@@ -5,21 +5,92 @@
   <title>Alta de Presupuesto</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; margin: 0; }
-    .container { max-width: 1200px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    h1, h2, h3 { text-align: center; color: #333; }
-    .form-section { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 4px; background: #fafafa; }
-    label { display: block; margin-top: 10px; font-weight: bold; }
-    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    input[readonly] { background: #eee; }
-    .btn { background: #69b6b1; color: #fff; border: none; padding: 10px 20px; margin-top: 15px; border-radius: 4px; cursor: pointer; }
-    .btn:hover { background: #a7d3cf; }
-    .remove-btn { background: #d9534f; padding: 5px 10px; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; }
-    .remove-btn:hover { background: #c9302c; }
-    .sector-block, .medida-block, .sector-prod-block { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 4px; background: #fff; }
-    #resumenTable { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    #resumenTable, #resumenTable th, #resumenTable td { border: 1px solid #aaa; }
-    #resumenTable th, #resumenTable td { padding: 8px; text-align: left; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3 {
+      text-align: center;
+      color: #333;
+    }
+    .form-section {
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      background: #fafafa;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    input[readonly] {
+      background: #eee;
+    }
+    .btn {
+      background: #89c5c0;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin-top: 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #a7d3cf;
+    }
+    .remove-btn {
+      background: #d9534f;
+      padding: 5px 10px;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    .remove-btn:hover {
+      background: #c9302c;
+    }
+    .sector-block, .medida-block, .sector-prod-block {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      background: #fff;
+    }
+    /* Tabla resumen */
+    #resumenTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    #resumenTable, #resumenTable th, #resumenTable td {
+      border: 1px solid #aaa;
+    }
+    #resumenTable th, #resumenTable td {
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
   </style>
 </head>
 <body>
@@ -44,15 +115,15 @@
         <label for="numeroPresupuesto">Número de Presupuesto:</label>
         <input type="text" id="numeroPresupuesto" name="numero_presupuesto" readonly placeholder="Autogenerado">
 
-        <label for="fechaPresupuesto">Fecha de Presupuesto:</label>
-        <input type="date" id="fechaPresupuesto" name="fecha_presupuesto" readonly>
-
         <label for="vendedor">Vendedor:</label>
         <input type="text" id="vendedor" name="vendedor" readonly value="JC (Autocompletado)">
         
         <label for="empresa">Empresa:</label>
         <input type="text" id="empresa" name="empresa" readonly value="Empresa X">
-               
+        
+        <label for="fechaPresupuesto">Fecha de Presupuesto:</label>
+        <input type="date" id="fechaPresupuesto" name="fecha_presupuesto" readonly>
+        
         <label for="fechaEnvio">Fecha de Envío:</label>
         <input type="date" id="fechaEnvio" name="fecha_envio">
         
@@ -64,6 +135,7 @@
           <option value="Finalizado">Finalizado</option>
           <option value="Modificado">Modificado</option>
         </select>
+        
       </div>
       
       <!-- SECCIÓN 3: Costos Adicionales -->
@@ -118,6 +190,7 @@
               <th>Sector</th>
               <th>Descripción</th>
               <th>Producto</th>
+              <th>Medidas (Cant x Ancho x Alto)</th>
               <th>Importe Final (ARS)</th>
             </tr>
           </thead>
@@ -143,7 +216,7 @@
   
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // Auto-asignar fecha de presupuesto (hoy)
+      // Asignar fecha de hoy
       const today = new Date().toISOString().split('T')[0];
       document.getElementById("fechaPresupuesto").value = today;
       
@@ -151,14 +224,19 @@
       const addSectorBtn = document.getElementById("addSectorBtn");
       let sectorCount = 0;
       
+      // Crear bloque de sector
       function createSectorBlock() {
         const sectorDiv = document.createElement("div");
         sectorDiv.classList.add("sector-block");
+        
+        // Guardar el índice real de este sector en un data-attribute
+        sectorDiv.dataset.sectorIndex = sectorCount;
         
         const header = document.createElement("h3");
         header.textContent = "Sector " + (sectorCount + 1);
         sectorDiv.appendChild(header);
         
+        // Botón eliminar sector
         const removeSectorBtn = document.createElement("button");
         removeSectorBtn.type = "button";
         removeSectorBtn.textContent = "Eliminar Sector";
@@ -170,15 +248,18 @@
         });
         sectorDiv.appendChild(removeSectorBtn);
         
+        // Descripción del sector
         const labelDesc = document.createElement("label");
         labelDesc.textContent = "Descripción del Sector:";
         sectorDiv.appendChild(labelDesc);
         const inputDesc = document.createElement("input");
         inputDesc.type = "text";
+        // El name se basa en sectorCount
         inputDesc.name = `sector_${sectorCount}_descripcion`;
         inputDesc.required = true;
         sectorDiv.appendChild(inputDesc);
         
+        // Tipo de Vidrio
         const labelVidrio = document.createElement("label");
         labelVidrio.textContent = "Tipo de Vidrio:";
         sectorDiv.appendChild(labelVidrio);
@@ -197,6 +278,7 @@
         });
         sectorDiv.appendChild(selectVidrio);
         
+        // Instalación
         const labelInstalacion = document.createElement("label");
         labelInstalacion.textContent = "Instalación (Interior/Exterior):";
         sectorDiv.appendChild(labelInstalacion);
@@ -214,6 +296,7 @@
         });
         sectorDiv.appendChild(selectInstalacion);
         
+        // Andamios
         const labelAndamios = document.createElement("label");
         labelAndamios.textContent = "Andamios:";
         sectorDiv.appendChild(labelAndamios);
@@ -231,6 +314,7 @@
         });
         sectorDiv.appendChild(selectAndamios);
         
+        // Vidrio Repartido
         const labelVidrioRep = document.createElement("label");
         labelVidrioRep.textContent = "Metros de Vidrio Repartido:";
         sectorDiv.appendChild(labelVidrioRep);
@@ -241,6 +325,7 @@
         inputVidrioRep.required = true;
         sectorDiv.appendChild(inputVidrioRep);
         
+        // Contenedor de Medidas
         const medidasContainer = document.createElement("div");
         medidasContainer.classList.add("medidas-container");
         sectorDiv.appendChild(medidasContainer);
@@ -253,6 +338,7 @@
         });
         sectorDiv.appendChild(addMedidaBtn);
         
+        // Contenedor de Productos
         const productosContainer = document.createElement("div");
         productosContainer.classList.add("productos-container");
         sectorDiv.appendChild(productosContainer);
@@ -265,11 +351,13 @@
         });
         sectorDiv.appendChild(addProductoBtn);
         
+        // Sincronizar y actualizar
         updateResumenTable();
         sectorCount++;
         return sectorDiv;
       }
       
+      // Crear un bloque de medida
       function createMedidaRow(sectorIndex) {
         const div = document.createElement("div");
         div.classList.add("medida-block");
@@ -316,6 +404,7 @@
         return div;
       }
       
+      // Crear un bloque de producto
       function createSectorProductoRow(sectorIndex) {
         const div = document.createElement("div");
         div.classList.add("sector-prod-block");
@@ -337,7 +426,7 @@
         });
         div.appendChild(selectProd);
         
-        // Se elimina el campo "Precio Base" ya que se calcula internamente.
+        // Eliminamos el campo "Precio Base" ya que se calcula internamente
         
         const removeProdBtn = document.createElement("button");
         removeProdBtn.type = "button";
@@ -352,56 +441,92 @@
         return div;
       }
       
+      // Cálculo simulado de totales globales
       function calculateTotals() {
         document.getElementById("m2Totales").value = 150;
         document.getElementById("metrosLineales").value = 80;
       }
       
+      // Actualiza la tabla "Resumen de Detalle de Cotización"
       function updateResumenTable() {
-      const resumenTbody = document.querySelector("#resumenTable tbody");
-      resumenTbody.innerHTML = "";
-      const sectores = document.querySelectorAll(".sector-block");
-      sectores.forEach((sector, sIndex) => {
-        const desc = sector.querySelector(`input[name="sector_${sIndex}_descripcion"]`).value || "";
-        // Obtener todos los bloques de producto en este sector
-        const prodBlocks = sector.querySelectorAll(".sector-prod-block");
-        prodBlocks.forEach(prodBlock => {
-          const selectProd = prodBlock.querySelector("select");
-          let prodName = selectProd ? selectProd.options[selectProd.selectedIndex].textContent : "";
-          // Suponemos un importe final simulado para el producto (en producción se calculará con la lógica de costos)
-          const importeFinal = 5000; // Valor simulado
-          const row = document.createElement("tr");
-          const cellSector = document.createElement("td");
-          cellSector.textContent = sIndex + 1;
-          row.appendChild(cellSector);
+        const resumenTbody = document.querySelector("#resumenTable tbody");
+        resumenTbody.innerHTML = "";
+        
+        // Capturar todos los sectores
+        const sectores = document.querySelectorAll(".sector-block");
+        sectores.forEach(sector => {
+          // Recuperar el índice real desde data-sector-index
+          const sectorIndex = parseInt(sector.dataset.sectorIndex, 10);
           
-          const cellDesc = document.createElement("td");
-          cellDesc.textContent = desc;
-          row.appendChild(cellDesc);
+          // Descripción del sector
+          const descInput = sector.querySelector(`input[name="sector_${sectorIndex}_descripcion"]`);
+          const desc = descInput ? descInput.value : "";
           
-          const cellProd = document.createElement("td");
-          cellProd.textContent = prodName;
-          row.appendChild(cellProd);
+          // Construir texto de medidas
+          let measureText = "";
+          const measureBlocks = sector.querySelectorAll(".medida-block");
+          measureBlocks.forEach(mb => {
+            const cantidad = mb.querySelector(`input[name="sector_${sectorIndex}_medida_cantidad[]"]`)?.value || "";
+            const ancho = mb.querySelector(`input[name="sector_${sectorIndex}_medida_ancho[]"]`)?.value || "";
+            const alto = mb.querySelector(`input[name="sector_${sectorIndex}_medida_alto[]"]`)?.value || "";
+            // Cada medida en una línea distinta
+            measureText += `${cantidad} x ${ancho} x ${alto}<br>`;
+          });
           
-          const cellImporte = document.createElement("td");
-          cellImporte.textContent = importeFinal.toFixed(2);
-          row.appendChild(cellImporte);
-          
-          resumenTbody.appendChild(row);
+          // Productos del sector
+          const prodBlocks = sector.querySelectorAll(".sector-prod-block");
+          prodBlocks.forEach(prodBlock => {
+            const selectProd = prodBlock.querySelector(`select[name="sector_${sectorIndex}_producto[]"]`);
+            const prodName = selectProd ? selectProd.options[selectProd.selectedIndex].textContent : "";
+            
+            // Simulación de importe final
+            const importeFinal = 5000;
+            
+            // Crear fila
+            const row = document.createElement("tr");
+            
+            // Sector
+            const cellSector = document.createElement("td");
+            cellSector.textContent = sectorIndex + 1;
+            row.appendChild(cellSector);
+            
+            // Descripción
+            const cellDesc = document.createElement("td");
+            cellDesc.textContent = desc;
+            row.appendChild(cellDesc);
+            
+            // Producto
+            const cellProd = document.createElement("td");
+            cellProd.textContent = prodName;
+            row.appendChild(cellProd);
+            
+            // Medidas
+            const cellMedidas = document.createElement("td");
+            cellMedidas.innerHTML = measureText.trim();
+            row.appendChild(cellMedidas);
+            
+            // Importe final
+            const cellImporte = document.createElement("td");
+            cellImporte.textContent = importeFinal.toFixed(2);
+            row.appendChild(cellImporte);
+            
+            resumenTbody.appendChild(row);
+          });
         });
-      });
-    }
-
+      }
       
+      // Botón para agregar un sector
       addSectorBtn.addEventListener("click", function() {
         sectoresContainer.appendChild(createSectorBlock());
       });
       
+      // Botón "Calcular"
       document.getElementById("calcularBtn").addEventListener("click", function() {
         calculateTotals();
         updateResumenTable();
       });
       
+      // Envío del formulario
       document.getElementById("presupuestoForm").addEventListener("submit", function(e) {
         e.preventDefault();
         alert("Presupuesto guardado (simulación)!");
