@@ -5,6 +5,7 @@
   <title>Alta de Presupuesto</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
+    /* Estilos generales */
     body {
       font-family: Arial, sans-serif;
       background: #f4f4f4;
@@ -22,9 +23,6 @@
     h1, h2, h3 {
       text-align: center;
       color: #333;
-    }
-    h1 {
-      margin-bottom: 3%;
     }
     .form-section {
       border: 1px solid #ddd;
@@ -80,17 +78,16 @@
       border-radius: 4px;
       background: #fff;
     }
-    /* Contenedor para la tabla responsiva */
+    /* Tabla resumen */
     .table-responsive {
       width: 100%;
       overflow-x: auto;
     }
-    /* Estilos de la tabla */
     #resumenTable {
       width: 100%;
       border-collapse: collapse;
       margin-top: 15px;
-      min-width: 600px; /* Si la tabla es muy ancha, se mostrará scroll horizontal */
+      min-width: 600px;
     }
     #resumenTable, #resumenTable th, #resumenTable td {
       border: 1px solid #aaa;
@@ -100,13 +97,23 @@
       text-align: left;
       vertical-align: top;
     }
-    /* Ajustes para pantallas móviles */
-    @media (max-width: 768px) {
-      .container {
-        padding: 10px;
+    /* Estilos para checkbox inline */
+    .checkbox-inline {
+      display: inline-block;
+      margin-left: 250px;
+    }
+    .checkbox-inline_2 {
+      display: inline-block;
+      margin-left: 350px;
+    }
+    @media screen and (max-width: 768px) {
+      .checkbox-inline {
+        display: inline-block;
+        margin-left: 50px;
       }
-      h1, h2, h3 {
-        font-size: 1.2em;
+      .checkbox-inline_2 {
+        display: inline-block;
+        margin-left: 25px;
       }
     }
   </style>
@@ -132,15 +139,26 @@
         <h2>Datos Generales</h2>
         <label for="numeroPresupuesto">Número de Presupuesto:</label>
         <input type="text" id="numeroPresupuesto" name="numero_presupuesto" readonly placeholder="Autogenerado">
-
+        
+        <label for="fechaPresupuesto">Fecha de Presupuesto:</label>
+        <input type="date" id="fechaPresupuesto" name="fecha_presupuesto" readonly>
+        
         <label for="vendedor">Vendedor:</label>
         <input type="text" id="vendedor" name="vendedor" readonly value="JC (Autocompletado)">
         
         <label for="empresa">Empresa:</label>
         <input type="text" id="empresa" name="empresa" readonly value="Empresa X">
         
-        <label for="fechaPresupuesto">Fecha de Presupuesto:</label>
-        <input type="date" id="fechaPresupuesto" name="fecha_presupuesto" readonly>
+        <!-- Checkbox para determinar si la obra es interior (si está marcada, se muestran Costos Adicionales) -->
+        <div class="checkbox-inline_2">
+          <input type="checkbox">
+          <label for="obraInterior">CABA/GBA</label>
+        </div>
+        <div class="checkbox-inline">
+          <input type="checkbox" id="obraInterior" name="obra_interior">
+          <label for="obraInterior">Interior del país</label>
+        </div>
+
         
         <label for="fechaEnvio">Fecha de Envío:</label>
         <input type="date" id="fechaEnvio" name="fecha_envio">
@@ -155,37 +173,21 @@
         </select>
       </div>
       
-      <!-- SECCIÓN 3: Costos Adicionales -->
-      <div class="form-section">
-        <h2>Costos Adicionales</h2>
-        <label for="ayudantesSelect">Ayudantes (Cantidad):</label>
-        <select id="ayudantesSelect" name="id_ayudantes">
-          <option value="">-- Seleccione --</option>
-          <option value="1">1 Ayudante</option>
-          <option value="2">2 Ayudantes</option>
-        </select>
-        
-        <label for="escalerasSelect">Cantidad de Escaleras:</label>
-        <select id="escalerasSelect" name="id_cantidad_escaleras">
-          <option value="">-- Seleccione --</option>
-          <option value="1">1 Escalera</option>
-          <option value="2">2 Escaleras</option>
-        </select>
-        
-        <label for="metrosDespolarizar">Metros a Despolarizar:</label>
-        <input type="number" id="metrosDespolarizar" name="metros_despolarizar" step="0.01">
-        
-        <label for="diasDistancia">Días para +200 km:</label>
-        <input type="number" id="diasDistancia" name="dias_distancia" step="1">
-      </div>
-      
       <!-- SECCIÓN 4: Sectores -->
       <div class="form-section">
         <h2>Sectores</h2>
         <div id="sectoresContainer">
-          <!-- Se agregarán dinámicamente bloques de sector -->
+          <!-- Los bloques de sector se agregarán dinámicamente -->
         </div>
         <button type="button" class="btn" id="addSectorBtn">Agregar Sector</button>
+      </div>
+
+      <!-- SECCIÓN 3: Costos Adicionales (se muestra solo si "obra_interior" está marcado) -->
+      <div class="form-section" id="costosAdicionalesSection" style="display: none;">
+        <h2>Costos Adicionales</h2>
+        <!-- En este ejemplo, solo mantenemos "Días para +200 km" -->
+        <label for="diasDistancia">Días para +200 km:</label>
+        <input type="number" id="diasDistancia" name="dias_distancia" step="1">
       </div>
       
       <!-- SECCIÓN 5: Resumen y Totales -->
@@ -199,18 +201,17 @@
         
         <button type="button" class="btn" id="calcularBtn">Calcular</button>
         
-        <!-- Contenedor para la tabla responsiva -->
         <div class="table-responsive">
-          <!-- Tabla Resumen de Detalle de Cotización -->
           <h3>Resumen de Detalle de Cotización</h3>
-          <table id="resumenTable">
-            <thead>
+          <table class="table table-hover" id="resumenTable">
+            <thead class="table-light">
               <tr>
                 <th>Sector</th>
                 <th>Descripción</th>
                 <th>Producto</th>
-                <th>Medidas (Cant x Ancho x Alto)</th>
+                <th>Medidas (Cant x Ancho x Alto x Despolarizado x M. Vidrio Rep.)</th>
                 <th>Importe Final (ARS)</th>
+                <th>Importe Final (USD)</th>
               </tr>
             </thead>
             <tbody>
@@ -240,14 +241,26 @@
       const today = new Date().toISOString().split('T')[0];
       document.getElementById("fechaPresupuesto").value = today;
       
+      // Mostrar/ocultar Costos Adicionales según checkbox "obra_interior"
+      const obraInteriorCheckbox = document.getElementById("obraInterior");
+      const costosAdicionalesSection = document.getElementById("costosAdicionalesSection");
+      obraInteriorCheckbox.addEventListener("change", function() {
+        if(this.checked) {
+          costosAdicionalesSection.style.display = "block";
+        } else {
+          costosAdicionalesSection.style.display = "none";
+        }
+      });
+      
       const sectoresContainer = document.getElementById("sectoresContainer");
       const addSectorBtn = document.getElementById("addSectorBtn");
       let sectorCount = 0;
       
-      // Crear bloque de sector y almacenar su índice real en data-attribute
+      // Función para crear un bloque de sector
       function createSectorBlock() {
         const sectorDiv = document.createElement("div");
         sectorDiv.classList.add("sector-block");
+        // Guardar el índice real del sector
         sectorDiv.dataset.sectorIndex = sectorCount;
         
         const header = document.createElement("h3");
@@ -283,9 +296,10 @@
         const selectVidrio = document.createElement("select");
         selectVidrio.name = `sector_${sectorCount}_tipo_vidrio`;
         const tiposVidrioSim = [
-          { id: 1, descripcion: "Crudo" },
-          { id: 2, descripcion: "Templado" },
-          { id: 3, descripcion: "Laminado" }
+          { id: 1, descripcion: "Control Solar" },
+          { id: 2, descripcion: "Seguridad" },
+          { id: 3, descripcion: "Privacidad" },
+          { id: 4, descripcion: "Grafica" }
         ];
         tiposVidrioSim.forEach(tv => {
           const option = document.createElement("option");
@@ -320,7 +334,7 @@
         const selectAndamios = document.createElement("select");
         selectAndamios.name = `sector_${sectorCount}_precio_andamios`;
         const andamiosSim = [
-          { id: 1, descripcion: "1 andamio" },
+          { id: 1, descripcion: "1 andamios" },
           { id: 2, descripcion: "2 andamios" }
         ];
         andamiosSim.forEach(a => {
@@ -331,18 +345,26 @@
         });
         sectorDiv.appendChild(selectAndamios);
         
-        // Vidrio Repartido: Ingresar metros
-        const labelVidrioRep = document.createElement("label");
-        labelVidrioRep.textContent = "Metros de Vidrio Repartido:";
-        sectorDiv.appendChild(labelVidrioRep);
-        const inputVidrioRep = document.createElement("input");
-        inputVidrioRep.type = "number";
-        inputVidrioRep.step = "0.01";
-        inputVidrioRep.name = `sector_${sectorCount}_metros_vidrio_repartido`;
-        inputVidrioRep.required = true;
-        sectorDiv.appendChild(inputVidrioRep);
+        // Nuevo campo: Tipo de Productos
+        const labelTipoProd = document.createElement("label");
+        labelTipoProd.textContent = "Tipo de Productos:";
+        sectorDiv.appendChild(labelTipoProd);
+        const selectTipoProd = document.createElement("select");
+        selectTipoProd.name = `sector_${sectorCount}_tipo_producto`;
+        const tiposProdSim = [
+          { id: 1, descripcion: "Tipo de producto 1" },
+          { id: 2, descripcion: "Tipo de producto 2" },
+          { id: 3, descripcion: "Tipo de producto 3" }
+        ];
+        tiposProdSim.forEach(tp => {  
+          const option = document.createElement("option");
+          option.value = tp.id;
+          option.textContent = tp.descripcion;
+          selectTipoProd.appendChild(option);
+        });
+        sectorDiv.appendChild(selectTipoProd);
         
-        // Contenedor de Medidas
+        // Contenedor de Medidas (ahora cada medida incluirá "Metros de Vidrio Repartido", "Despolarizado" y "Requiere Unión")
         const medidasContainer = document.createElement("div");
         medidasContainer.classList.add("medidas-container");
         sectorDiv.appendChild(medidasContainer);
@@ -373,11 +395,12 @@
         return sectorDiv;
       }
       
-      // Crear un bloque de Medida
+      // Crear bloque de Medida (dentro de cada sector)
       function createMedidaRow(sectorIndex) {
         const div = document.createElement("div");
         div.classList.add("medida-block");
         
+        // Cantidad
         const labelCant = document.createElement("label");
         labelCant.textContent = "Cantidad:";
         div.appendChild(labelCant);
@@ -387,6 +410,7 @@
         inputCant.required = true;
         div.appendChild(inputCant);
         
+        // Ancho
         const labelAncho = document.createElement("label");
         labelAncho.textContent = "Ancho (m):";
         div.appendChild(labelAncho);
@@ -397,6 +421,7 @@
         inputAncho.required = true;
         div.appendChild(inputAncho);
         
+        // Alto
         const labelAlto = document.createElement("label");
         labelAlto.textContent = "Alto (m):";
         div.appendChild(labelAlto);
@@ -406,6 +431,43 @@
         inputAlto.name = `sector_${sectorIndex}_medida_alto[]`;
         inputAlto.required = true;
         div.appendChild(inputAlto);
+        
+        // Metros de Vidrio Repartido (nuevo en medida)
+        const labelVidrioRep = document.createElement("label");
+        labelVidrioRep.textContent = "Metros de Vidrio Repartido:";
+        div.appendChild(labelVidrioRep);
+        const inputVidrioRep = document.createElement("input");
+        inputVidrioRep.type = "number";
+        inputVidrioRep.step = "0.01";
+        inputVidrioRep.name = `sector_${sectorIndex}_medida_vidrio_repartido[]`;
+        inputVidrioRep.required = true;
+        div.appendChild(inputVidrioRep);
+        
+        // Checkbox: Despolarizado
+        const divDespolarizado = document.createElement("div");
+        divDespolarizado.classList.add("checkbox-inline");
+        const inputDespolarizado = document.createElement("input");
+        inputDespolarizado.type = "checkbox";
+        inputDespolarizado.name = `sector_${sectorIndex}_medida_despolarizado[]`;
+        inputDespolarizado.value = "1";
+        divDespolarizado.appendChild(inputDespolarizado);
+        const labelDespolarizado = document.createElement("label");
+        labelDespolarizado.textContent = "Despolarizado";
+        divDespolarizado.appendChild(labelDespolarizado);
+        div.appendChild(divDespolarizado);
+        
+        // Checkbox: Requiere Unión
+        // const divUnion = document.createElement("div");
+        // divUnion.classList.add("checkbox-inline");
+        // const inputUnion = document.createElement("input");
+        // inputUnion.type = "checkbox";
+        // inputUnion.name = `sector_${sectorIndex}_medida_requiere_union[]`;
+        // inputUnion.value = "1";
+        // divUnion.appendChild(inputUnion);
+        // const labelUnion = document.createElement("label");
+        // labelUnion.textContent = "Requiere Unión";
+        // divUnion.appendChild(labelUnion);
+        // div.appendChild(divUnion);
         
         const removeMedidaBtn = document.createElement("button");
         removeMedidaBtn.type = "button";
@@ -420,7 +482,7 @@
         return div;
       }
       
-      // Crear un bloque de Producto
+      // Crear bloque de Producto (dentro de cada sector)
       function createSectorProductoRow(sectorIndex) {
         const div = document.createElement("div");
         div.classList.add("sector-prod-block");
@@ -431,8 +493,10 @@
         const selectProd = document.createElement("select");
         selectProd.name = `sector_${sectorIndex}_producto[]`;
         const productosSim = [
-          { id: 1, tipo_lamina: "Privacidad" },
-          { id: 2, tipo_lamina: "Transparente" }
+          { id: 1, tipo_lamina: "Producto 1" },
+          { id: 2, tipo_lamina: "Producto 2" },
+          { id: 3, tipo_lamina: "Producto 3" },
+          { id: 4, tipo_lamina: "Producto 4" },
         ];
         productosSim.forEach(prod => {
           const option = document.createElement("option");
@@ -442,7 +506,7 @@
         });
         div.appendChild(selectProd);
         
-        // Eliminamos el campo "Precio Base" porque se calcula internamente
+        // Se elimina el campo "Precio Base" ya que se calcula internamente
         
         const removeProdBtn = document.createElement("button");
         removeProdBtn.type = "button";
@@ -459,11 +523,12 @@
       
       // Función simulada para calcular totales globales
       function calculateTotals() {
-        document.getElementById("m2Totales").value = 150; // Valor simulado
-        document.getElementById("metrosLineales").value = 80; // Valor simulado
+        // Valores simulados para este ejemplo
+        document.getElementById("m2Totales").value = 150;
+        document.getElementById("metrosLineales").value = 80;
       }
       
-      // Actualizar la tabla de resumen de detalle de cotización
+      // Actualizar la tabla "Resumen de Detalle de Cotización"
       function updateResumenTable() {
         const resumenTbody = document.querySelector("#resumenTable tbody");
         resumenTbody.innerHTML = "";
@@ -471,72 +536,84 @@
         // Recorrer cada sector
         const sectores = document.querySelectorAll(".sector-block");
         sectores.forEach(sector => {
-          // Leer el índice real desde el data-attribute
+          // Usar el índice real del sector del data-attribute
           const sectorIndex = sector.dataset.sectorIndex;
-          
-          // Obtener la descripción del sector
           const descInput = sector.querySelector(`input[name="sector_${sectorIndex}_descripcion"]`);
           const desc = descInput ? descInput.value : "";
           
-          // Recoger todas las medidas de este sector y formatearlas con salto de línea
+          // Recoger las medidas de este sector
           let measureText = "";
           const measureBlocks = sector.querySelectorAll(".medida-block");
           measureBlocks.forEach(mb => {
             const cantidad = mb.querySelector(`input[name="sector_${sectorIndex}_medida_cantidad[]"]`)?.value || "";
             const ancho = mb.querySelector(`input[name="sector_${sectorIndex}_medida_ancho[]"]`)?.value || "";
             const alto = mb.querySelector(`input[name="sector_${sectorIndex}_medida_alto[]"]`)?.value || "";
-            measureText += `${cantidad} x ${ancho} x ${alto}<br>`;
+            const vidrioRep = mb.querySelector(`input[name="sector_${sectorIndex}_medida_vidrio_repartido[]"]`)?.value || "";
+            const despolarizado = mb.querySelector(`input[name="sector_${sectorIndex}_medida_despolarizado[]"]`)?.checked ? "Si" : "No";
+            const requiereUnion = mb.querySelector(`input[name="sector_${sectorIndex}_medida_requiere_union[]"]`)?.checked ? "Si" : "No";
+            measureText += `${cantidad} x ${ancho} x ${alto} x ${despolarizado} x ${requiereUnion} x ${vidrioRep}<br>`;
           });
           
-          // Recorrer cada producto del sector
+          // Recorrer los productos del sector
           const prodBlocks = sector.querySelectorAll(".sector-prod-block");
           prodBlocks.forEach(prodBlock => {
             const selectProd = prodBlock.querySelector(`select[name="sector_${sectorIndex}_producto[]"]`);
             const prodName = selectProd ? selectProd.options[selectProd.selectedIndex].textContent : "";
             
-            // Importe final simulado
-            const importeFinal = 5000;
+            // Simulación: importe final fijo en ARS
+            const importeFinalARS = 5000;
+            // Convertir a USD (por ejemplo, usando un tipo de cambio de 100 ARS = 1 USD)
+            const importeFinalUSD = importeFinalARS / 100;
             
-            // Crear la fila para este producto
             const row = document.createElement("tr");
             
+            // Sector (número)
             const cellSector = document.createElement("td");
             cellSector.textContent = parseInt(sectorIndex, 10) + 1;
             row.appendChild(cellSector);
             
+            // Descripción del sector
             const cellDesc = document.createElement("td");
             cellDesc.textContent = desc;
             row.appendChild(cellDesc);
             
+            // Producto
             const cellProd = document.createElement("td");
             cellProd.textContent = prodName;
             row.appendChild(cellProd);
             
+            // Medidas
             const cellMedidas = document.createElement("td");
             cellMedidas.innerHTML = measureText.trim();
             row.appendChild(cellMedidas);
             
-            const cellImporte = document.createElement("td");
-            cellImporte.textContent = importeFinal.toFixed(2);
-            row.appendChild(cellImporte);
+            // Importe Final ARS
+            const cellImporteARS = document.createElement("td");
+            cellImporteARS.textContent = importeFinalARS.toFixed(2);
+            row.appendChild(cellImporteARS);
+            
+            // Importe Final USD
+            const cellImporteUSD = document.createElement("td");
+            cellImporteUSD.textContent = importeFinalUSD.toFixed(2);
+            row.appendChild(cellImporteUSD);
             
             resumenTbody.appendChild(row);
           });
         });
       }
       
-      // Agregar un nuevo sector al hacer clic en "Agregar Sector"
+      // Agregar nuevo sector al hacer clic
       addSectorBtn.addEventListener("click", function() {
         sectoresContainer.appendChild(createSectorBlock());
       });
       
-      // Al hacer clic en "Calcular", se actualizan los totales y el resumen
+      // Botón "Calcular" actualiza totales y la tabla resumen
       document.getElementById("calcularBtn").addEventListener("click", function() {
         calculateTotals();
         updateResumenTable();
       });
       
-      // Al enviar el formulario (simulación)
+      // Envío del formulario (simulación)
       document.getElementById("presupuestoForm").addEventListener("submit", function(e) {
         e.preventDefault();
         alert("Presupuesto guardado (simulación)!");
